@@ -1,0 +1,673 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Anchor, HelpCircle, CheckCircle, XCircle, Highlighter, BookOpen, Skull, PenTool, Send, User, Download, Copy, Image as ImageIcon, Scissors } from 'lucide-react';
+
+export default function App() {
+    // --- Estados Globales ---
+    const [studentName, setStudentName] = useState("");
+    const [studentCourse, setStudentCourse] = useState("4°A");
+    const [hasStarted, setHasStarted] = useState(false);
+    const [isFinished, setIsFinished] = useState(false);
+    
+    // --- Datos de la Actividad (SOMBRERO PIRATA) ---
+    const textContent = {
+        title: "Cómo hacer un Sombrero Pirata",
+        // Usamos un placeholder visual ya que no tenemos la imagen real cargada
+        imageAlt: "Niño usando un sombrero pirata de papel",
+    };
+
+    const questions = [
+        {
+            id: 0,
+            type: "intro",
+            text: "Antes de leer, observa la estructura y el título. ¿Qué tipo de texto crees que es este?",
+            options: [
+                "Un cuento sobre piratas famosos.",
+                "Una noticia sobre barcos antiguos.",
+                "Un texto instructivo para hacer manualidades.",
+                "Un poema dedicado al mar."
+            ],
+            correct: 2, // C
+            skill: "Conocimiento previo / Estructura",
+            feedbackCorrect: (name) => `¡Correcto, ${name}! Tiene lista de materiales y pasos ordenados, típico de un instructivo.`,
+            feedbackWrong: (name) => `Fíjate en el formato, ${name}. ¿Ves que hay pasos numerados (1, 2, 3...)? Eso nos dice cómo hacer algo.`
+        },
+        {
+            id: 1,
+            type: "simce",
+            text: "1. Según el texto, ¿qué debes hacer justo después de dibujar la forma del sombrero?",
+            options: [
+                "Pegar la calavera en el centro.",
+                "Recortar la silueta con tijeras.",
+                "Medir tu cabeza con la cartulina.",
+                "Pintar el papel de color negro."
+            ],
+            correct: 1, // B
+            skill: "Localizar Información (Explícita)",
+            hint: "Busca el Paso 2 en el texto.",
+            feedbackCorrect: (name) => `¡Muy bien, ${name}! El Paso 2 dice explícitamente: 'Recorta la silueta que dibujaste'.`,
+            feedbackWrong: (name) => `Revisa el orden de los números, ${name}. ¿Qué dice el paso número 2?`
+        },
+        {
+            id: 2,
+            type: "simce",
+            text: "2. ¿Por qué se recomienda usar un lápiz blanco o tiza en el Paso 5?",
+            options: [
+                "Porque es el único lápiz que corta el papel.",
+                "Para que el dibujo resalte sobre la cartulina negra.",
+                "Porque a los piratas les gusta el color blanco.",
+                "Para poder borrar si te equivocas al dibujar."
+            ],
+            correct: 1, // B
+            skill: "Inferir / Causa y efecto",
+            hint: "Piensa en el color de la cartulina (Paso 1).",
+            feedbackCorrect: (name) => `¡Exacto, ${name}! Como la cartulina es negra (Paso 1), un lápiz oscuro no se vería. El blanco resalta.`,
+            feedbackWrong: (name) => `Relaciona la información, ${name}. En el paso 1 dice que la cartulina es negra. ¿Se vería un lápiz negro sobre fondo negro?`
+        },
+        {
+            id: 3,
+            type: "simce",
+            text: "3. ¿Cuál es la función principal de la 'tira larga' mencionada en el Paso 3?",
+            options: [
+                "Servir como una espada de juguete.",
+                "Decorar la parte superior del sombrero.",
+                "Formar un cintillo para ajustar el sombrero a la cabeza.",
+                "Reforzar las puntas del tricornio."
+            ],
+            correct: 2, // C
+            skill: "Propósito local / Interpretar",
+            hint: "Lee atentamente el Paso 3.",
+            feedbackCorrect: (name) => `¡Excelente, ${name}! El texto dice que el cintillo es para formar un círculo de 'tu talla'.`,
+            feedbackWrong: (name) => `Vuelve al Paso 3, ${name}. Ahí explica para qué sirve esa tira y qué debes hacer con ella (formar un círculo).`
+        },
+        {
+            id: 4,
+            type: "simce",
+            text: "4. Si te saltaras el Paso 3 y pegaras el sombrero directamente, ¿qué problema tendrías?",
+            options: [
+                "El sombrero no tendría la forma de tricornio.",
+                "No podrías ponerte el sombrero en la cabeza.",
+                "La calavera no se vería bien.",
+                "El papel se rompería al cortar."
+            ],
+            correct: 1, // B
+            skill: "Reflexión / Predicción",
+            hint: "Recuerda qué parte del sombrero va en contacto con tu cabeza.",
+            feedbackCorrect: (name) => `¡Bien pensado, ${name}! El cintillo (Paso 3) es la base que sujeta el sombrero a tu cabeza.`,
+            feedbackWrong: (name) => `Piénsalo, ${name}. El tricornio es plano. Sin el cintillo circular del paso 3, ¿cómo se sostendría en tu cabeza?`
+        },
+        {
+            id: 5,
+            type: "simce",
+            text: "5. ¿Cuál es el propósito principal de este texto?",
+            options: [
+                "Contar la historia de Barbanegra.",
+                "Convencerte de que los piratas eran buenos.",
+                "Enseñarte a fabricar un accesorio de disfraz.",
+                "Informar sobre los tipos de cartulinas."
+            ],
+            correct: 2, // C
+            skill: "Propósito Global",
+            hint: "Mira el título y lo que obtienes al final.",
+            feedbackCorrect: (name) => `¡Perfecto, ${name}! El objetivo es que aprendas a crear (fabricar) tu propio sombrero.`,
+            feedbackWrong: (name) => `No es solo información, ${name}. Al terminar de leer y seguir los pasos, ¿qué has logrado hacer?`
+        },
+        {
+            id: 6,
+            type: "opinion",
+            text: "Pregunta de Opinión: ¿Crees que es importante decorar el sombrero con la calavera (Paso 5)? ¿Por qué?",
+            placeholder: "Yo opino que sí/no es importante porque...",
+            skill: "Reflexión Crítica",
+            checklist: ["Tomar postura (Sí/No)", "Usar la palabra 'porque'", "Relacionar con el tema 'pirata'"]
+        }
+    ];
+
+    // --- Estados de la Actividad ---
+    const [currentQIndex, setCurrentQIndex] = useState(0);
+    const [selectedOption, setSelectedOption] = useState(null);
+    const [isCorrect, setIsCorrect] = useState(null);
+    const [showFeedback, setShowFeedback] = useState(false);
+    const [textHtml, setTextHtml] = useState(""); 
+    const [questionHtml, setQuestionHtml] = useState("");
+    const [opinionAnswer, setOpinionAnswer] = useState("");
+    const [opinionFeedback, setOpinionFeedback] = useState(null);
+    const [selectedColor, setSelectedColor] = useState("bg-yellow-200"); 
+    const [results, setResults] = useState([]); 
+
+    const textRef = useRef(null);
+    const questionRef = useRef(null);
+
+    const currentQuestion = questions[currentQIndex];
+
+    // --- Inicialización del Texto (Generación HTML) ---
+    useEffect(() => {
+        let htmlContent = `
+            <div class="font-serif text-gray-800">
+                <h2 class="text-3xl font-bold text-center text-red-900 mb-2" style="font-family: 'Indie Flower', cursive;">${textContent.title}</h2>
+                <p class="text-center text-gray-600 italic mb-6">¡Conviértete en el capitán de los siete mares!</p>
+                
+                <div class="bg-amber-50 p-4 rounded-lg border-2 border-amber-200 mb-6 shadow-sm">
+                    <h3 class="font-bold text-amber-800 mb-2 flex items-center gap-2">🛠️ Materiales:</h3>
+                    <ul class="list-disc list-inside text-gray-700 space-y-1">
+                        <li>Una hoja grande de <strong>cartulina negra</strong>.</li>
+                        <li>Tijeras (punta redonda).</li>
+                        <li>Pegamento en barra o cinta adhesiva.</li>
+                        <li>Lápiz de color blanco, tiza o corrector.</li>
+                    </ul>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="flex gap-4">
+                        <div class="bg-red-100 text-red-800 font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 border-2 border-red-200">1</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-900">Dibuja la forma</h4>
+                            <p>Sobre la <strong>cartulina negra</strong>, dibuja la forma de un sombrero grande. Intenta hacer una forma de nube ancha o usa un plato grande para guiarte y hacer las curvas del tricornio.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="bg-red-100 text-red-800 font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 border-2 border-red-200">2</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-900">Recorta con cuidado</h4>
+                            <p>Toma las tijeras y <strong>recorta</strong> siguiendo la línea que dibujaste. Pide ayuda a un adulto si la cartulina es muy dura.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="bg-red-100 text-red-800 font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 border-2 border-red-200">3</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-900">Prepara el cintillo</h4>
+                            <p>Corta una <strong>tira larga</strong> y rectangular de la cartulina sobrante. Mide tu cabeza con ella y pega los extremos para formar un círculo de <strong>tu talla</strong>. Esto sostendrá el sombrero.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="bg-red-100 text-red-800 font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 border-2 border-red-200">4</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-900">Arma tu sombrero</h4>
+                            <p>Pega la silueta del sombrero (que recortaste en el paso 2) sobre la parte frontal del cintillo circular.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-4">
+                        <div class="bg-red-100 text-red-800 font-bold rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 border-2 border-red-200">5</div>
+                        <div>
+                            <h4 class="font-bold text-lg text-indigo-900">¡A decorar!</h4>
+                            <p>Usa el <strong>lápiz blanco</strong> o tiza para dibujar una calavera y huesos cruzados en el centro del sombrero. ¡Listo, capitán!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Nota sobre el destacado
+        htmlContent += `<p class="text-center text-sm text-gray-400 italic mt-8 border-t pt-2">Texto adaptado para fines educativos.</p>`;
+
+        setTextHtml(htmlContent);
+    }, []);
+
+    // --- Actualización de Pregunta ---
+    useEffect(() => {
+        if (!isFinished) {
+            setQuestionHtml(currentQuestion.text);
+            setSelectedOption(null);
+            setIsCorrect(null);
+            setShowFeedback(false);
+            setOpinionAnswer("");
+            setOpinionFeedback(null);
+        }
+    }, [currentQIndex, isFinished]);
+
+    // --- Lógica de Inicio ---
+    const handleStart = () => {
+        if (studentName.trim() !== "") {
+            setHasStarted(true);
+        } else {
+            alert("¡Arrgh! Escribe tu nombre para zarpar, grumete.");
+        }
+    };
+
+    // --- Lógica de Destacado ---
+    const highlightSelection = (containerRef, setHtmlFn) => {
+        const selection = window.getSelection();
+        if (!selection.rangeCount || selection.isCollapsed) return;
+
+        const range = selection.getRangeAt(0);
+        const container = containerRef.current;
+
+        if (container && container.contains(range.commonAncestorContainer)) {
+            const span = document.createElement("span");
+            let colorHex = "#fef08a"; // Amarillo
+            if (selectedColor === "bg-cyan-200") colorHex = "#a5f3fc";
+            if (selectedColor === "bg-green-200") colorHex = "#bbf7d0";
+            if (selectedColor === "bg-pink-200") colorHex = "#fbcfe8";
+
+            span.style.backgroundColor = colorHex;
+            span.style.borderRadius = "2px";
+            span.style.padding = "0 2px";
+            span.style.boxShadow = "0 1px 2px rgba(0,0,0,0.1)";
+            
+            try {
+                range.surroundContents(span);
+                selection.removeAllRanges();
+                setHtmlFn(container.innerHTML);
+            } catch (e) {
+                alert("Intenta seleccionar solo texto continuo.");
+            }
+        } else {
+            alert("Selecciona texto dentro del área correcta para destacar.");
+        }
+    };
+
+    // --- Lógica de Respuestas ---
+    const handleCheckAnswer = () => {
+        if (selectedOption === null) return;
+        
+        const correct = selectedOption === currentQuestion.correct;
+        setIsCorrect(correct);
+        setShowFeedback(true);
+
+        const newResult = {
+            question: currentQuestion.text,
+            isCorrect: correct,
+            userAnswer: currentQuestion.options[selectedOption],
+            correctAnswer: currentQuestion.options[currentQuestion.correct]
+        };
+        setResults(prev => [...prev.filter(r => r.question !== currentQuestion.text), newResult]);
+    };
+
+    const handleOpinionSubmit = () => {
+        const lowerAnswer = opinionAnswer.toLowerCase();
+        const checks = {
+            posture: lowerAnswer.includes("sí") || lowerAnswer.includes("si") || lowerAnswer.includes("no") || lowerAnswer.includes("creo") || lowerAnswer.includes("opino") || lowerAnswer.includes("importante"),
+            reason: lowerAnswer.includes("porque") || lowerAnswer.includes("ya que") || lowerAnswer.includes("para que"),
+            pirateRef: lowerAnswer.includes("pirata") || lowerAnswer.includes("miedo") || lowerAnswer.includes("capitán") || lowerAnswer.includes("símbolo") || lowerAnswer.includes("reconozcan")
+        };
+
+        let feedbackMsg = "";
+        let score = 0;
+        if (checks.posture) score++;
+        if (checks.reason) score++;
+        if (checks.pirateRef) score++;
+
+        if (score === 3) {
+            feedbackMsg = `¡Excelente, Capitán ${studentName}! Tomaste postura, explicaste el 'porqué' y mencionaste el tema pirata.`;
+        } else if (score === 2) {
+            feedbackMsg = `¡Vas muy bien, ${studentName}! Revisa: ¿Dijiste por qué? ¿Mencionaste a los piratas o su símbolo?`;
+        } else {
+            feedbackMsg = `Inténtalo de nuevo, ${studentName}. Recuerda decir qué piensas y explicarlo usando el tema del texto.`;
+        }
+
+        setOpinionFeedback({ score, msg: feedbackMsg });
+        
+        setResults(prev => [...prev.filter(r => r.question !== currentQuestion.text), {
+            question: currentQuestion.text,
+            isCorrect: score >= 2,
+            userAnswer: opinionAnswer,
+            correctAnswer: "Opinión fundamentada sobre la decoración pirata"
+        }]);
+    };
+
+    const nextQuestion = () => {
+        if (currentQIndex < questions.length - 1) {
+            setCurrentQIndex(currentQIndex + 1);
+        } else {
+            setIsFinished(true);
+        }
+    };
+
+    // --- Reporte Final ---
+    const generateReport = () => {
+        const date = new Date().toLocaleDateString();
+        let report = `REPORTE DE LECTURA - 4° BÁSICO\n`;
+        report += `Fecha: ${date}\n`;
+        report += `Estudiante: ${studentName}\n`;
+        report += `Curso: ${studentCourse}\n`;
+        report += `Actividad: Cómo hacer un Sombrero Pirata\n`;
+        report += `--------------------------------\n`;
+        
+        let correctCount = 0;
+        results.forEach((r, idx) => {
+            if (r.isCorrect) correctCount++;
+            report += `P${idx + 1}: ${r.isCorrect ? "CORRECTA" : "INCORRECTA"}\n`;
+        });
+        report += `--------------------------------\n`;
+        report += `PUNTAJE FINAL: ${correctCount} / ${questions.length}\n`;
+        return report;
+    };
+
+    const handleCopyReport = () => {
+        navigator.clipboard.writeText(generateReport());
+        alert("¡Reporte copiado! Listo para enviar a tu profesora.");
+    };
+
+    const handleDownloadReport = () => {
+        const element = document.createElement("a");
+        const file = new Blob([generateReport()], {type: 'text/plain'});
+        element.href = URL.createObjectURL(file);
+        element.download = `Reporte_Pirata_${studentName.replace(/\s+/g, '_')}.txt`;
+        document.body.appendChild(element);
+        element.click();
+    };
+
+    // --- Renderizado de Pantalla de Inicio ---
+    if (!hasStarted) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-sky-100 p-4 font-sans" style={{
+                backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.1' fill-rule='evenodd'/%3E%3C/svg%3E")`
+            }}>
+                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-md w-full border-b-8 border-red-500 relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-red-500"></div>
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-red-100 p-4 rounded-full">
+                            <Anchor size={48} className="text-red-700" />
+                        </div>
+                    </div>
+                    <h1 className="text-3xl font-bold text-center text-gray-900 mb-2 font-serif" style={{ fontFamily: "'Indie Flower', cursive" }}>¡Misión Pirata!</h1>
+                    <p className="text-center text-gray-600 mb-6">Lee el instructivo para crear tu propio sombrero y responde las preguntas del Capitán.</p>
+                    
+                    <div className="space-y-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Nombre del Grumete:</label>
+                            <input 
+                                type="text" 
+                                value={studentName}
+                                onChange={(e) => setStudentName(e.target.value)}
+                                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-red-500 outline-none"
+                                placeholder="Escribe tu nombre..."
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Tu tripulación (Curso):</label>
+                            <select 
+                                value={studentCourse}
+                                onChange={(e) => setStudentCourse(e.target.value)}
+                                className="w-full p-3 border-2 border-gray-300 rounded-lg focus:border-red-500 outline-none bg-white"
+                            >
+                                <option>4°A</option>
+                                <option>4°B</option>
+                                <option>4°C</option>
+                            </select>
+                        </div>
+                        <button 
+                            onClick={handleStart}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg shadow-lg transform transition hover:-translate-y-1 flex justify-center items-center gap-2"
+                        >
+                            <Skull size={20}/> ¡Zarpar!
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- Renderizado de Pantalla Final ---
+    if (isFinished) {
+        const score = results.filter(r => r.isCorrect).length;
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-sky-50 p-4 font-sans">
+                <div className="bg-white p-8 rounded-2xl shadow-xl max-w-lg w-full text-center border-b-8 border-yellow-500">
+                    <div className="flex justify-center mb-4">
+                        <div className="bg-yellow-100 p-4 rounded-full animate-bounce">
+                            <CheckCircle size={48} className="text-yellow-600" />
+                        </div>
+                    </div>
+                    <h2 className="text-3xl font-bold text-gray-800 mb-2 font-serif">¡Tesoro Conseguido!</h2>
+                    <p className="text-gray-600 mb-6">¡Gran trabajo, Capitán {studentName}!</p>
+                    
+                    <div className="bg-gray-100 p-6 rounded-lg mb-6">
+                        <p className="text-sm text-gray-500 uppercase font-bold tracking-wide">Tu Botín (Puntaje)</p>
+                        <p className="text-5xl font-bold text-indigo-600">{score} / {questions.length}</p>
+                    </div>
+
+                    <div className="flex flex-col gap-3">
+                        <button 
+                            onClick={handleCopyReport}
+                            className="flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-lg transition"
+                        >
+                            <Copy size={20} /> Copiar reporte
+                        </button>
+                        <button 
+                            onClick={handleDownloadReport}
+                            className="flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg shadow-lg transition"
+                        >
+                            <Download size={20} /> Descargar reporte
+                        </button>
+                        <button 
+                            onClick={() => window.location.reload()}
+                            className="mt-2 text-indigo-500 font-bold hover:underline text-sm"
+                        >
+                            Volver a empezar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    // --- Renderizado Principal (Actividad) ---
+    return (
+        <div className="min-h-screen p-4 md:p-8 max-w-6xl mx-auto font-sans bg-[#f5f7fa]" style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%239C92AC' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E")`
+        }}>
+            {/* Header */}
+            <header className="flex flex-col md:flex-row items-center justify-between mb-6 bg-white p-4 rounded-xl shadow-md border-b-4 border-red-600 gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="bg-red-100 p-2 rounded-full">
+                        <User size={24} className="text-red-700" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-gray-800 font-serif" style={{ fontFamily: "'Indie Flower', cursive" }}>Tripulante: {studentName}</h1>
+                        <p className="text-red-600 text-xs font-bold uppercase">{studentCourse} - Comprensión Lectora</p>
+                    </div>
+                </div>
+                
+                {/* Selector de Color */}
+                <div className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg border border-gray-200">
+                    <span className="text-xs font-bold text-gray-500 mr-1">Marcador:</span>
+                    <button onClick={() => setSelectedColor("bg-yellow-200")} className={`w-6 h-6 rounded-full bg-yellow-200 border-2 ${selectedColor === "bg-yellow-200" ? "border-red-500 scale-110" : "border-gray-300"}`} title="Amarillo"></button>
+                    <button onClick={() => setSelectedColor("bg-cyan-200")} className={`w-6 h-6 rounded-full bg-cyan-200 border-2 ${selectedColor === "bg-cyan-200" ? "border-red-500 scale-110" : "border-gray-300"}`} title="Celeste"></button>
+                    <button onClick={() => setSelectedColor("bg-green-200")} className={`w-6 h-6 rounded-full bg-green-200 border-2 ${selectedColor === "bg-green-200" ? "border-red-500 scale-110" : "border-gray-300"}`} title="Verde"></button>
+                    <button onClick={() => setSelectedColor("bg-pink-200")} className={`w-6 h-6 rounded-full bg-pink-200 border-2 ${selectedColor === "bg-pink-200" ? "border-red-500 scale-110" : "border-gray-300"}`} title="Rosa"></button>
+                </div>
+            </header>
+
+            {/* Barra de Progreso */}
+            <div className="w-full bg-gray-200 rounded-full h-3 mb-6 overflow-hidden border border-gray-300">
+                <div 
+                    className="bg-red-500 h-full transition-all duration-500"
+                    style={{ width: `${((currentQIndex + 1) / questions.length) * 100}%` }}
+                ></div>
+            </div>
+
+            <main className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                
+                {/* Panel Izquierdo: Texto Instructivo */}
+                <div className="flex flex-col gap-2 h-full">
+                    <div className="flex justify-between items-center bg-gray-800 text-white p-3 rounded-t-xl px-4 shadow-sm">
+                        <span className="flex items-center gap-2 font-bold text-sm"><BookOpen size={16}/> Texto Instructivo</span>
+                        <button 
+                            onClick={() => highlightSelection(textRef, setTextHtml)}
+                            className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full font-bold transition flex items-center gap-1 border border-white/40"
+                        >
+                            <Highlighter size={12}/> destacar
+                        </button>
+                    </div>
+                    <div 
+                        className="bg-white p-6 rounded-b-xl shadow-lg border-2 border-gray-200 flex-grow text-lg leading-relaxed overflow-y-auto max-h-[600px]"
+                        ref={textRef}
+                        dangerouslySetInnerHTML={{ __html: textHtml }}
+                    />
+                </div>
+
+                {/* Panel Derecho: Preguntas */}
+                <div className="flex flex-col gap-2 h-full">
+                    <div className="flex justify-between items-center bg-sky-700 text-white p-3 rounded-t-xl px-4 shadow-sm">
+                        <span className="flex items-center gap-2 font-bold text-sm"><HelpCircle size={16}/> Pregunta {currentQIndex + 1}</span>
+                        <button 
+                            onClick={() => highlightSelection(questionRef, setQuestionHtml)}
+                            className="bg-white/20 hover:bg-white/30 text-white text-xs px-3 py-1.5 rounded-full font-bold transition flex items-center gap-1 border border-white/40"
+                        >
+                            <PenTool size={12}/> destacar clave
+                        </button>
+                    </div>
+
+                    <div className="bg-white p-6 rounded-b-xl shadow-lg border-2 border-sky-100 flex-grow flex flex-col justify-between">
+                        <div>
+                            <div 
+                                className="text-xl font-medium text-gray-800 mb-6"
+                                ref={questionRef}
+                                dangerouslySetInnerHTML={{ __html: questionHtml }}
+                            />
+
+                            {currentQuestion.type === "opinion" ? (
+                                // Renderizado para Pregunta de Opinión
+                                <div className="space-y-4 animate-fade-in">
+                                    <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                                        <p className="text-sm text-blue-800 mb-2 font-bold">💡 Lista de cotejo:</p>
+                                        <ul className="list-disc list-inside text-sm text-blue-700">
+                                            {currentQuestion.checklist.map((item, idx) => (
+                                                <li key={idx}>{item}</li>
+                                            ))}
+                                        </ul>
+                                    </div>
+                                    <textarea 
+                                        className="w-full p-4 border-2 border-gray-300 rounded-lg focus:border-sky-500 focus:ring-2 focus:ring-sky-200 outline-none transition"
+                                        rows="4"
+                                        placeholder={currentQuestion.placeholder}
+                                        value={opinionAnswer}
+                                        onChange={(e) => setOpinionAnswer(e.target.value)}
+                                    ></textarea>
+                                    
+                                    {!opinionFeedback ? (
+                                        <button 
+                                            onClick={handleOpinionSubmit}
+                                            className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-3 rounded-lg shadow-md transition flex justify-center items-center gap-2 transform hover:-translate-y-0.5"
+                                        >
+                                            <Send size={18}/> Enviar opinión
+                                        </button>
+                                    ) : (
+                                        <div className={`p-4 rounded-lg border ${opinionFeedback.score >= 2 ? 'bg-green-100 border-green-300' : 'bg-orange-100 border-orange-300'}`}>
+                                            <p className="font-bold mb-2 text-sm">
+                                                {opinionFeedback.score >= 2 ? '🌟 ¡Excelente!' : '📝 Vamos a mejorar:'}
+                                            </p>
+                                            <p className="text-sm">{opinionFeedback.msg}</p>
+                                            {opinionFeedback.score >= 2 && (
+                                                <button 
+                                                    onClick={nextQuestion}
+                                                    className="mt-3 bg-green-600 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm hover:bg-green-700"
+                                                >
+                                                    Siguiente pregunta
+                                                </button>
+                                            )}
+                                            {opinionFeedback.score < 2 && (
+                                                <button 
+                                                    onClick={() => setOpinionFeedback(null)}
+                                                    className="mt-3 bg-orange-500 text-white px-4 py-2 rounded-lg font-bold text-xs shadow-sm hover:bg-orange-600"
+                                                >
+                                                    Editar respuesta
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                // Renderizado para Selección Múltiple
+                                <div className="space-y-3">
+                                    {currentQuestion.options.map((option, idx) => (
+                                        <button
+                                            key={idx}
+                                            onClick={() => !showFeedback && setSelectedOption(idx)}
+                                            className={`w-full text-left p-4 rounded-lg border-2 transition-all duration-200 flex items-center gap-3 relative
+                                                ${selectedOption === idx 
+                                                    ? 'border-sky-500 bg-sky-50' 
+                                                    : 'border-gray-200 hover:border-sky-300 hover:bg-gray-50'
+                                                }
+                                                ${showFeedback && idx === currentQuestion.correct ? '!bg-green-100 !border-green-500' : ''}
+                                                ${showFeedback && selectedOption === idx && idx !== currentQuestion.correct ? '!bg-red-50 !border-red-400' : ''}
+                                            `}
+                                            disabled={showFeedback}
+                                        >
+                                            <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold flex-shrink-0 transition-colors
+                                                ${selectedOption === idx ? 'bg-sky-600 text-white' : 'bg-gray-200 text-gray-500'}
+                                                ${showFeedback && idx === currentQuestion.correct ? '!bg-green-600 !text-white' : ''}
+                                                ${showFeedback && selectedOption === idx && idx !== currentQuestion.correct ? '!bg-red-500 !text-white' : ''}
+                                            `}>
+                                                {String.fromCharCode(65 + idx)}
+                                            </div>
+                                            <span className="font-medium text-gray-700">{option}</span>
+                                            
+                                            {/* Iconos de feedback */}
+                                            {showFeedback && idx === currentQuestion.correct && (
+                                                <CheckCircle className="absolute right-4 text-green-600" size={24} />
+                                            )}
+                                            {showFeedback && selectedOption === idx && idx !== currentQuestion.correct && (
+                                                <XCircle className="absolute right-4 text-red-500" size={24} />
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Botón de Revisar / Feedback (Solo múltiple opción) */}
+                        {currentQuestion.type !== "opinion" && (
+                            <div className="mt-6">
+                                {!showFeedback ? (
+                                    <button 
+                                        onClick={handleCheckAnswer}
+                                        disabled={selectedOption === null}
+                                        className={`w-full py-3 rounded-lg font-bold text-lg shadow-md transition transform
+                                            ${selectedOption !== null 
+                                                ? 'bg-red-600 hover:bg-red-700 text-white hover:-translate-y-0.5' 
+                                                : 'bg-gray-200 text-gray-400 cursor-not-allowed'}
+                                        `}
+                                    >
+                                        Comprobar respuesta
+                                    </button>
+                                ) : (
+                                    <div className={`rounded-lg p-4 mt-4 animate-fade-in border-l-4 ${isCorrect ? 'bg-green-50 border-green-500' : 'bg-red-50 border-red-500'}`}>
+                                        <div className="flex flex-col gap-2">
+                                            <h4 className={`font-bold ${isCorrect ? 'text-green-800' : 'text-red-800'}`}>
+                                                {isCorrect ? `¡Bien hecho, marinero ${studentName}!` : `¡Cuidado, ${studentName}!`}
+                                            </h4>
+                                            <p className="text-gray-700 text-sm leading-relaxed">
+                                                {isCorrect ? currentQuestion.feedbackCorrect(studentName) : currentQuestion.feedbackWrong(studentName)}
+                                            </p>
+                                            {!isCorrect && (
+                                                <div className="mt-2 text-xs font-bold text-amber-800 bg-amber-100 px-3 py-2 rounded-md inline-block self-start border border-amber-200">
+                                                    ⚓ Pista: {currentQuestion.hint}
+                                                </div>
+                                            )}
+                                        </div>
+                                        {isCorrect && (
+                                            <button 
+                                                onClick={nextQuestion}
+                                                className="mt-4 bg-green-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-green-700 transition w-full md:w-auto shadow-sm"
+                                            >
+                                                Siguiente pregunta
+                                            </button>
+                                        )}
+                                        {!isCorrect && (
+                                            <button 
+                                                onClick={() => { setShowFeedback(false); setSelectedOption(null); }}
+                                                className="mt-4 text-red-600 font-bold hover:underline text-sm"
+                                            >
+                                                Intentar otra vez
+                                            </button>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </main>
+
+            <footer className="mt-8 text-center text-gray-400 text-xs">
+                <div className="flex justify-center items-center gap-2 mb-2">
+                        <span>Actividad de 4° Básico - Tema: Instructivo Pirata</span>
+                </div>
+            </footer>
+        </div>
+    );
+}
